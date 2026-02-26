@@ -53,17 +53,6 @@ App runs on:
 npm run build
 ```
 
-## Deploy
-
-Deploy to dev:
-```bash
-npm run deploy:dev
-```
-
-Deploy to prod:
-```bash
-npm run deploy:prod
-```
 
 ## Testing
 
