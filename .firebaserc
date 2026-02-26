@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "dev": "seekv8-dev",
+    "prod": "seekv8-prod"
+  },
+  "etags": {}
+}
