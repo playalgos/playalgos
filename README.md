@@ -100,4 +100,3 @@ functions/
 
 - Score-critical game writes are handled through Cloud Functions.
 - Firestore rules block direct client writes to sessions, bestScores, and leaderboard entries.
-- For Firebase bootstrapping details, see `FIREBASE_SETUP.md`.

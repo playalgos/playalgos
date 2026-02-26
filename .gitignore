@@ -2,8 +2,10 @@
 .env.local
 .firebase/
 firebase-debug.log
+firestore-debug.log
 node_modules/
 dist/
 
 functions/node_modules/
 functions/lib/
+temp/
