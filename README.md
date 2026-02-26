@@ -89,3 +89,48 @@ functions/
 
 - Score-critical game writes are handled through Cloud Functions.
 - Firestore rules block direct client writes to sessions, bestScores, and leaderboard entries.
+
+## Git Branch Policy
+
+- `main`: production branch. Merges here trigger production deploy workflow (with environment approval gate).
+- `develop`: integration branch. Merges here trigger automatic deploy to dev.
+- `feat/<name>` and `fix/<name>`: day-to-day work branches created from `develop`.
+- `hotfix/<name>`: urgent production fixes created from `main`.
+
+### Day-to-day flow
+
+1. Create branch from `develop`:
+```bash
+git checkout develop
+git pull
+git checkout -b feat/<name>
+```
+2. Push branch and open PR to `develop`.
+3. Merge only after CI is green.
+4. Merge to `develop` auto-deploys to dev.
+
+### Release flow
+
+1. Open PR from `develop` to `main`.
+2. Merge after CI checks pass and reviews are complete.
+3. Production deploy job starts and waits for `production` environment approval.
+
+### Hotfix flow
+
+1. Branch from `main`:
+```bash
+git checkout main
+git pull
+git checkout -b hotfix/<name>
+```
+2. Open PR to `main` and merge after CI.
+3. Open PR from `main` back to `develop` to keep branches in sync.
+
+### Tag production releases
+
+```bash
+git checkout main
+git pull
+git tag v0.1.0
+git push origin v0.1.0
+```
