@@ -9,7 +9,7 @@ type DijkstraSessionPayload = {
   graph: WeightedGraph;
   startId: string;
   targetId: string;
-  distances: Record<string, number>;
+  distances: Record<string, number | null>;
   previous: Record<string, string | null>;
   lockedOrder: string[];
   validLocks: number;
@@ -47,8 +47,8 @@ export async function submitDijkstraLock(params: {
     accepted: boolean;
     reason: "ok" | "unknown-node" | "already-locked" | "not-frontier-min";
     candidateMinNodes: string[];
-    targetDistance?: number;
-    optimalDistance?: number;
+    targetDistance?: number | null;
+    optimalDistance?: number | null;
     delta?: number;
     bestCost?: number;
     bestUpdated?: boolean;
@@ -63,8 +63,8 @@ export async function submitDijkstraLock(params: {
       accepted: boolean;
       reason: "ok" | "unknown-node" | "already-locked" | "not-frontier-min";
       candidateMinNodes: string[];
-      targetDistance?: number;
-      optimalDistance?: number;
+      targetDistance?: number | null;
+      optimalDistance?: number | null;
       delta?: number;
       bestCost?: number;
       bestUpdated?: boolean;
