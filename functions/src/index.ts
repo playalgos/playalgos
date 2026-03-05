@@ -89,7 +89,7 @@ type DijkstraSessionDoc = {
   graph: DijkstraGraph;
   startId: string;
   targetId: string;
-  distances: Record<string, number>;
+  distances: Record<string, number | null>;
   previous: Record<string, string | null>;
   lockedOrder: string[];
   validLocks: number;
@@ -180,10 +180,10 @@ function createDijkstraInitialState(scenario: {
   targetId: string;
   graph: DijkstraGraph;
 }): DijkstraSessionDoc {
-  const distances: Record<string, number> = {};
+  const distances: Record<string, number | null> = {};
   const previous: Record<string, string | null> = {};
   for (const node of scenario.graph.nodes) {
-    distances[node] = Number.POSITIVE_INFINITY;
+    distances[node] = null;
     previous[node] = null;
   }
   distances[scenario.startId] = 0;
@@ -204,13 +204,13 @@ function createDijkstraInitialState(scenario: {
 
 function getDijkstraMinFrontierCandidates(session: DijkstraSessionDoc): string[] {
   const locked = new Set(session.lockedOrder);
-  let minDistance = Number.POSITIVE_INFINITY;
+  let minDistance: number | null = null;
   const candidates: string[] = [];
   for (const node of session.graph.nodes) {
     if (locked.has(node)) continue;
     const distance = session.distances[node];
-    if (!Number.isFinite(distance)) continue;
-    if (distance < minDistance) {
+    if (typeof distance !== "number" || !Number.isFinite(distance)) continue;
+    if (minDistance === null || distance < minDistance) {
       minDistance = distance;
       candidates.length = 0;
       candidates.push(node);
@@ -271,11 +271,12 @@ function applyDijkstraLock(
 
   const locked = new Set(next.lockedOrder);
   const currentDistance = next.distances[nodeId];
-  if (Number.isFinite(currentDistance)) {
+  if (typeof currentDistance === "number" && Number.isFinite(currentDistance)) {
     for (const edge of next.graph.adjacency[nodeId] ?? []) {
       if (locked.has(edge.to)) continue;
       const candidate = currentDistance + edge.weight;
-      if (candidate < next.distances[edge.to]) {
+      const existing = next.distances[edge.to];
+      if (existing === null || candidate < existing) {
         next.distances[edge.to] = candidate;
         next.previous[edge.to] = nodeId;
       }
@@ -290,28 +291,33 @@ function applyDijkstraLock(
   };
 }
 
-function solveDijkstraGraph(graph: DijkstraGraph, startId: string): { distances: Record<string, number> } {
-  const distances: Record<string, number> = {};
+function solveDijkstraGraph(graph: DijkstraGraph, startId: string): { distances: Record<string, number | null> } {
+  const distances: Record<string, number | null> = {};
   const visited = new Set<string>();
-  for (const node of graph.nodes) distances[node] = Number.POSITIVE_INFINITY;
+  for (const node of graph.nodes) distances[node] = null;
   distances[startId] = 0;
 
   while (true) {
     let minNode: string | null = null;
-    let minDistance = Number.POSITIVE_INFINITY;
+    let minDistance: number | null = null;
     for (const node of graph.nodes) {
       if (visited.has(node)) continue;
-      if (distances[node] < minDistance) {
-        minDistance = distances[node];
+      const distance = distances[node];
+      if (typeof distance !== "number" || !Number.isFinite(distance)) continue;
+      if (minDistance === null || distance < minDistance) {
+        minDistance = distance;
         minNode = node;
       }
     }
-    if (!minNode || !Number.isFinite(minDistance)) break;
+    if (!minNode || minDistance === null) break;
     visited.add(minNode);
     for (const edge of graph.adjacency[minNode] ?? []) {
       if (visited.has(edge.to)) continue;
-      const candidate = distances[minNode] + edge.weight;
-      if (candidate < distances[edge.to]) distances[edge.to] = candidate;
+      const minNodeDistance = distances[minNode];
+      if (typeof minNodeDistance !== "number") continue;
+      const candidate = minNodeDistance + edge.weight;
+      const existing = distances[edge.to];
+      if (existing === null || candidate < existing) distances[edge.to] = candidate;
     }
   }
 
@@ -1351,7 +1357,10 @@ export const submitDijkstraLock = onCall(async (request) => {
     const targetDistance = next.distances[session.targetId];
     const optimalDistance = solved.distances[session.targetId];
     const delta =
-      Number.isFinite(targetDistance) && Number.isFinite(optimalDistance)
+      typeof targetDistance === "number" &&
+      Number.isFinite(targetDistance) &&
+      typeof optimalDistance === "number" &&
+      Number.isFinite(optimalDistance)
         ? Math.max(0, targetDistance - optimalDistance)
         : 0;
     const bestCost = delta * 10 + next.invalidLocks;
