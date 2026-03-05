@@ -16,15 +16,15 @@ type DijkstraViewState = {
   graph: WeightedGraph;
   startId: string;
   targetId: string;
-  distances: Record<string, number>;
+  distances: Record<string, number | null>;
   previous: Record<string, string | null>;
   lockedOrder: string[];
   validLocks: number;
   invalidLocks: number;
 };
 
-function getDistanceLabel(value: number): string {
-  return Number.isFinite(value) ? String(value) : "∞";
+function getDistanceLabel(value: number | null): string {
+  return typeof value === "number" && Number.isFinite(value) ? String(value) : "∞";
 }
 
 function getPathLabel(path: string[] | null): string {
@@ -39,7 +39,7 @@ function getMinFrontierNodes(state: DijkstraViewState): string[] {
   for (const node of state.graph.nodes) {
     if (locked.has(node)) continue;
     const distance = state.distances[node];
-    if (!Number.isFinite(distance)) continue;
+    if (typeof distance !== "number" || !Number.isFinite(distance)) continue;
     if (distance < min) {
       min = distance;
       nodes.length = 0;
@@ -66,15 +66,14 @@ export function DijkstraPathStrategyPage() {
   const [bestDelta, setBestDelta] = useState<number | null>(null);
   const [leaderboard, setLeaderboard] = useState<Array<{ uid: string; bestCost: number; delta: number }>>([]);
   const [roundSummary, setRoundSummary] = useState<{
-    targetDistance: number;
-    optimalDistance: number;
+    targetDistance: number | null;
+    optimalDistance: number | null;
     delta: number;
     bestCost: number;
   } | null>(null);
 
-  const targetDistance =
-    roundSummary?.targetDistance ?? (state ? state.distances[state.targetId] : Number.POSITIVE_INFINITY);
-  const optimalDistance = roundSummary?.optimalDistance ?? Number.POSITIVE_INFINITY;
+  const targetDistance = roundSummary?.targetDistance ?? (state ? state.distances[state.targetId] : null);
+  const optimalDistance = roundSummary?.optimalDistance ?? null;
   const delta = roundSummary?.delta ?? 0;
   const playerPath = state ? buildShortestPath(state.previous, state.startId, state.targetId) : null;
 
@@ -275,7 +274,10 @@ export function DijkstraPathStrategyPage() {
           <div className="dijkstra-node-grid">
             {state.graph.nodes.map((node) => {
               const isLocked = locked.has(node);
-              const isFrontier = !isLocked && Number.isFinite(state.distances[node]);
+              const isFrontier =
+                !isLocked &&
+                typeof state.distances[node] === "number" &&
+                Number.isFinite(state.distances[node]);
               return (
                 <button
                   key={node}
