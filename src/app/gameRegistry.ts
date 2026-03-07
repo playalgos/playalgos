@@ -8,6 +8,13 @@ export type GameMeta = {
 
 export const games: GameMeta[] = [
   {
+    id: "binary-search-runner",
+    title: "Binary Search Runner",
+    description: "Dino-style endless runner where each obstacle is a binary search decision.",
+    route: "/games/binary-search-runner",
+    status: "ready"
+  },
+  {
     id: "binary-search",
     title: "Binary Search Guessing",
     description: "Guess the hidden number with as few steps as possible.",

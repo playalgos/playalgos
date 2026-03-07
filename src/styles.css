@@ -761,3 +761,61 @@ h1 {
   margin: 0;
   padding-left: 18px;
 }
+
+.runner-shell {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.runner-track {
+  position: relative;
+  height: 78px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  overflow: hidden;
+}
+
+.runner-player {
+  position: absolute;
+  left: 14px;
+  bottom: 16px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+}
+
+.runner-obstacle {
+  position: absolute;
+  bottom: 16px;
+  transform: translateX(-100%);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.runner-hud {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+.runner-controls {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
