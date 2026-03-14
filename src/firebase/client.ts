@@ -22,7 +22,7 @@ const missingKeys = Object.entries(firebaseConfig)
 
 export const firebaseConfigError =
   missingKeys.length > 0
-    ? `Missing Firebase config: ${missingKeys.join(", ")}. Create .env from .env.example with real Firebase web app values.`
+    ? `Missing Firebase config: ${missingKeys.join(", ")}. Copy .env.example to .env, replace placeholder values with your Firebase web app config, then restart the Vite dev server.`
     : null;
 
 export const firebaseApp = firebaseConfigError

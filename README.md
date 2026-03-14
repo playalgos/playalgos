@@ -32,7 +32,7 @@ cd functions && npm install && cd ..
 cp .env.example .env
 ```
 
-Fill `.env` with your Firebase web app config values.
+Fill `.env` with your Firebase web app config values, then restart `npm run dev` if it was already running. Vite reads env vars at startup.
 
 3. Ensure Firebase is configured:
 - Add project aliases in `.firebaserc` (`dev`, `prod`)
