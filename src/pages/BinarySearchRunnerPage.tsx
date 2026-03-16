@@ -197,11 +197,43 @@ export function BinarySearchRunnerPage() {
       )}
 
       <div className="runner-shell" aria-live="polite">
-        <div className="runner-track">
-          <div className="runner-player">RUNNER</div>
-          <div className="runner-obstacle" style={{ left: `${progress}%` }}>
-            CHECKPOINT
-          </div>
+        <div style={{ margin: "16px 0", textAlign: "center", background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0", overflow: "hidden", position: "relative", height: "180px" }}>
+          <svg viewBox="0 0 800 150" style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}>
+            {/* Ground */}
+            <rect x="0" y="100" width="800" height="50" fill="#e2e8f0" />
+            
+            {/* Runner */}
+            <g transform="translate(100, 50)">
+               <circle cx="20" cy="15" r="15" fill="#0ea5e9" />
+               <rect x="15" y="30" width="10" height="20" fill="#0ea5e9" rx="3" />
+            </g>
+
+            {/* Checkpoint & Doors moving progressively leftwards */}
+            <g transform={`translate(${150 + (progress / 100) * 600}, 15)`}>
+               {/* Checkpoint Sign */}
+               <rect x="0" y="0" width="6" height="85" fill="#94a3b8" />
+               <rect x="-42" y="-15" width="90" height="25" fill="#3b82f6" rx="4" />
+               <text x="3" y="2" fill="white" fontSize="12" textAnchor="middle" fontWeight="bold">CHKPT</text>
+               
+               {/* 3 Doors (Lower, Equal, Upper) */}
+               <g transform="translate(-100, 30)">
+                 {/* Lower Half Door */}
+                 <rect x="0" y="0" width="40" height="55" rx="4" fill="#bae6fd" stroke="#0ea5e9" strokeWidth="2" />
+                 <text x="20" y="25" fontSize="16" fill="#0284c7" textAnchor="middle" fontWeight="bold">{'<'}</text>
+                 <text x="20" y="45" fontSize="10" fill="#0284c7" textAnchor="middle" fontWeight="bold">{round.mid}</text>
+                 
+                 {/* Found Door */}
+                 <rect x="60" y="0" width="40" height="55" rx="4" fill="#a7f3d0" stroke="#10b981" strokeWidth="2" />
+                 <text x="80" y="25" fontSize="16" fill="#047857" textAnchor="middle" fontWeight="bold">{'='}</text>
+                 <text x="80" y="45" fontSize="10" fill="#047857" textAnchor="middle" fontWeight="bold">{round.mid}</text>
+
+                 {/* Upper Half Door */}
+                 <rect x="120" y="0" width="40" height="55" rx="4" fill="#fed7aa" stroke="#f97316" strokeWidth="2" />
+                 <text x="140" y="25" fontSize="16" fill="#c2410c" textAnchor="middle" fontWeight="bold">{'>'}</text>
+                 <text x="140" y="45" fontSize="10" fill="#c2410c" textAnchor="middle" fontWeight="bold">{round.mid}</text>
+               </g>
+            </g>
+          </svg>
         </div>
         <div className="runner-hud">
           <span>Target: {round.target}</span>

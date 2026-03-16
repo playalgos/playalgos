@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { buildShortestPath, DIJKSTRA_PATH_STRATEGY_GAME_ID, type WeightedGraph } from "../games/dijkstraPathStrategy";
 import { auth } from "../firebase/client";
 import {
@@ -51,6 +51,33 @@ function getMinFrontierNodes(state: DijkstraViewState): string[] {
   return nodes.sort((a, b) => a.localeCompare(b));
 }
 
+const PRESET_LAYOUTS: Record<string, Record<string, { x: number; y: number }>> = {
+  "city-1": {
+    A: { x: 100, y: 150 },
+    B: { x: 280, y: 70 },
+    C: { x: 280, y: 230 },
+    D: { x: 460, y: 150 }
+  },
+  "city-2": {
+    S: { x: 80, y: 150 },
+    U: { x: 220, y: 70 },
+    V: { x: 220, y: 230 },
+    W: { x: 360, y: 70 },
+    T: { x: 500, y: 150 }
+  }
+};
+
+function getLayout(scenarioId: string, nodes: string[]): Record<string, { x: number; y: number }> {
+  if (PRESET_LAYOUTS[scenarioId]) return PRESET_LAYOUTS[scenarioId];
+  const N = nodes.length;
+  const layout: Record<string, { x: number; y: number }> = {};
+  nodes.forEach((node, i) => {
+    const angle = (i * 2 * Math.PI) / N - Math.PI / 2;
+    layout[node] = { x: 280 + 160 * Math.cos(angle), y: 150 + 100 * Math.sin(angle) };
+  });
+  return layout;
+}
+
 export function DijkstraPathStrategyPage() {
   const uid = auth?.currentUser?.uid ?? null;
   const [gameState, setGameState] = useState<GameState>("idle");
@@ -61,6 +88,7 @@ export function DijkstraPathStrategyPage() {
   const [decisionLog, setDecisionLog] = useState<string[]>([]);
   const [hintsUsed, setHintsUsed] = useState<number>(0);
   const [showHint, setShowHint] = useState<boolean>(false);
+  const [showDistances, setShowDistances] = useState<boolean>(false);
   const [inputError, setInputError] = useState<string>("");
   const [bestCost, setBestCost] = useState<number | null>(null);
   const [bestDelta, setBestDelta] = useState<number | null>(null);
@@ -107,6 +135,7 @@ export function DijkstraPathStrategyPage() {
     setRoundSummary(null);
     setHintsUsed(0);
     setShowHint(false);
+    setShowDistances(false);
     setDecisionLog([]);
     setFeedback("Loading scenario...");
     setFeedbackTone("neutral");
@@ -131,7 +160,9 @@ export function DijkstraPathStrategyPage() {
         validLocks: session.validLocks,
         invalidLocks: session.invalidLocks
       });
-      setFeedback(`Game started. Lock frontier nodes from ${session.startId} toward ${session.targetId}.`);
+      setFeedback(
+        `Game started. Tentative distances are hidden by default, so compute the next lock from ${session.startId} toward ${session.targetId}.`
+      );
       setFeedbackTone("neutral");
       setGameState("playing");
     } catch (error: unknown) {
@@ -150,6 +181,14 @@ export function DijkstraPathStrategyPage() {
         ? "Hint: no reachable frontier nodes remain."
         : `Hint: minimum frontier node(s): ${minNodes.join(", ")}`
     );
+    setFeedbackTone("inside");
+  }
+
+  function revealDistances(): void {
+    if (!state || gameState !== "playing" || showDistances) return;
+    setHintsUsed((value) => value + 1);
+    setShowDistances(true);
+    setFeedback("Assist mode on: tentative distances and frontier highlighting are now visible for this round.");
     setFeedbackTone("inside");
   }
 
@@ -184,8 +223,12 @@ export function DijkstraPathStrategyPage() {
         return;
       }
 
-      setDecisionLog((logs) => [`Locked: ${nodeId}`, ...logs].slice(0, 12));
-      setFeedback(`Valid lock: ${nodeId}. Distances updated.`);
+      const lockedDistance = nextState.distances[nodeId];
+      setDecisionLog((logs) => [
+        `Locked: ${nodeId} at d=${getDistanceLabel(lockedDistance)}`,
+        ...logs
+      ].slice(0, 12));
+      setFeedback(`Valid lock: ${nodeId}. Recompute the frontier before your next move.`);
       setFeedbackTone("inside");
 
       if (result.status === "won" && result.targetDistance !== undefined && result.optimalDistance !== undefined && result.delta !== undefined && result.bestCost !== undefined) {
@@ -214,12 +257,13 @@ export function DijkstraPathStrategyPage() {
   }
 
   const locked = new Set(state?.lockedOrder ?? []);
+  const layout = state ? getLayout(state.scenarioId, state.graph.nodes) : {};
 
   return (
     <section>
       <h1>Dijkstra (Path Strategy)</h1>
       <p className="subtitle">
-        Lock the minimum tentative frontier node each turn to reach the shortest path.
+        Default mode hides tentative distances. You need to infer the next minimum node from the graph, weights, and lock history.
       </p>
 
       <div className="stats-row">
@@ -262,6 +306,14 @@ export function DijkstraPathStrategyPage() {
           <div className="dijkstra-board-head">
             <h2>Node Locks</h2>
             <div className="dijkstra-actions">
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={revealDistances}
+                disabled={showDistances}
+              >
+                {showDistances ? "Distances Visible" : "Show Distances (+1 hint)"}
+              </button>
               <button type="button" className="ghost-btn" onClick={useHint}>
                 Hint
               </button>
@@ -271,40 +323,86 @@ export function DijkstraPathStrategyPage() {
             </div>
           </div>
 
-          <div className="dijkstra-node-grid">
-            {state.graph.nodes.map((node) => {
-              const isLocked = locked.has(node);
-              const isFrontier =
-                !isLocked &&
-                typeof state.distances[node] === "number" &&
-                Number.isFinite(state.distances[node]);
-              return (
-                <button
-                  key={node}
-                  type="button"
-                  className={`dijkstra-node ${isLocked ? "locked" : isFrontier ? "frontier" : "unvisited"}`}
-                  onClick={() => void lockNode(node)}
-                  disabled={isLocked}
-                  title={`Lock ${node}`}
-                >
-                  <div className="dijkstra-node-id">{node}</div>
-                  <div className="dijkstra-node-distance">d={getDistanceLabel(state.distances[node])}</div>
-                </button>
-              );
-            })}
-          </div>
+          <div className="dijkstra-graph-container" style={{ margin: "20px 0", textAlign: "center", overflowX: "auto" }}>
+            <svg viewBox="0 0 560 300" style={{ maxWidth: "100%", height: "auto", background: "#f8fafc", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+              <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
+                </marker>
+                <marker id="arrowhead-active" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#10b981" />
+                </marker>
+              </defs>
 
-          <div className="dijkstra-edge-list">
-            <h3>Edges</h3>
-            <ul>
+              {/* Edges */}
               {state.graph.nodes.flatMap((from) =>
-                state.graph.adjacency[from].map((edge) => (
-                  <li key={`${from}-${edge.to}-${edge.weight}`}>
-                    {from} {"->"} {edge.to} (w={edge.weight})
-                  </li>
-                ))
+                state.graph.adjacency[from].map((edge) => {
+                  const p1 = layout[from];
+                  const p2 = layout[edge.to];
+                  if (!p1 || !p2) return null;
+                  const midX = (p1.x + p2.x) / 2;
+                  const midY = (p1.y + p2.y) / 2;
+                  const isPath = state.previous[edge.to] === from && locked.has(edge.to);
+                  return (
+                    <g key={`${from}-${edge.to}`}>
+                      <line
+                        x1={p1.x}
+                        y1={p1.y}
+                        x2={p2.x}
+                        y2={p2.y}
+                        stroke={isPath ? "#10b981" : "#cbd5e1"}
+                        strokeWidth={isPath ? 3 : 2}
+                        markerEnd={isPath ? "url(#arrowhead-active)" : "url(#arrowhead)"}
+                      />
+                      <circle cx={midX} cy={midY} r="12" fill="#ffffff" stroke={isPath ? "#10b981" : "#cbd5e1"} strokeWidth="1.5" />
+                      <text x={midX} y={midY} textAnchor="middle" dy=".3em" fontSize="12" fontWeight="700" fill={isPath ? "#10b981" : "#475569"}>
+                        {edge.weight}
+                      </text>
+                    </g>
+                  );
+                })
               )}
-            </ul>
+
+              {/* Nodes */}
+              {state.graph.nodes.map((node) => {
+                const p = layout[node];
+                if (!p) return null;
+                const isLocked = locked.has(node);
+                const isFrontier =
+                  !isLocked &&
+                  typeof state.distances[node] === "number" &&
+                  Number.isFinite(state.distances[node]);
+                const displayDistance = isLocked || showDistances ? getDistanceLabel(state.distances[node]) : "?";
+
+                let fill = "#ffffff";
+                let stroke = "#cbd5e1";
+                if (isLocked) {
+                  fill = "#ecfdf5";
+                  stroke = "#10b981";
+                } else if (showDistances && isFrontier) {
+                  fill = "#eff6ff";
+                  stroke = "#3b82f6";
+                }
+
+                return (
+                  <g
+                    key={node}
+                    transform={`translate(${p.x}, ${p.y})`}
+                    onClick={() => { if (!isLocked) void lockNode(node); }}
+                    style={{ cursor: isLocked ? "not-allowed" : "pointer", outline: "none" }}
+                    role="button"
+                    aria-label={`Lock ${node}`}
+                    tabIndex={isLocked ? -1 : 0}
+                    onKeyDown={(e) => { if (!isLocked && (e.key === "Enter" || e.key === " ")) void lockNode(node); }}
+                  >
+                    <title>Lock {node}</title>
+                    <circle r="22" fill={fill} stroke={stroke} strokeWidth="2" style={{ transition: "all 0.2s" }} />
+                    <text textAnchor="middle" dy="-2" fontSize="14" fontWeight="bold" fill="#0f172a">{node}</text>
+                    <text textAnchor="middle" dy="12" fontSize="10" fill="#475569" fontWeight="600">d={displayDistance}</text>
+                  </g>
+                );
+              })}
+            </svg>
           </div>
 
           <div className="dijkstra-log">

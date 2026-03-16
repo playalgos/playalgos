@@ -395,6 +395,49 @@ export function KnapsackTreasurePage() {
             </button>
           </div>
 
+          <div style={{ marginBottom: "20px" }}>
+            <h3 style={{ fontSize: "14px", color: "#475569", marginBottom: "8px" }}>Bag Capacity ({liveTotals.usedWeight} / {capacity})</h3>
+            <svg viewBox="0 0 600 60" style={{ width: "100%", height: "auto", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+              {/* Background Capacity Bar */}
+              <rect x="10" y="20" width="580" height="20" rx="10" fill="#e2e8f0" />
+              
+              {/* Used Capacity Bar */}
+              {(() => {
+                const percentage = Math.min(100, (liveTotals.usedWeight / capacity) * 100);
+                const isOverweight = liveTotals.usedWeight > capacity;
+                let fill = "#34d399";
+                if (percentage > 85) fill = "#fbbf24";
+                if (isOverweight) fill = "#ef4444";
+                
+                return (
+                  <rect x="10" y="20" width={(percentage / 100) * 580} height="20" rx="10" fill={fill} style={{ transition: "all 0.3s ease" }} />
+                );
+              })()}
+              
+              {/* Item Segment Blocks over the bar */}
+              {(() => {
+                let currentX = 10;
+                return selectedIndices.map((idx) => {
+                  const item = items[idx];
+                  if (!item) return null;
+                  const itemWidth = (item.weight / capacity) * 580;
+                  const block = (
+                    <g key={item.id} transform={`translate(${currentX}, 20)`}>
+                      <rect x="0" y="0" width={itemWidth} height="20" fill="none" stroke="#ffffff" strokeWidth="2" strokeOpacity="0.5" />
+                      {itemWidth > 20 && <text x={itemWidth / 2} y="14" fontSize="10" fill="#ffffff" textAnchor="middle" fontWeight="bold">{item.weight}</text>}
+                    </g>
+                  );
+                  currentX += itemWidth;
+                  return block;
+                });
+              })()}
+              
+              {/* Boundary Markers */}
+              <text x="10" y="55" fontSize="12" fill="#64748b" textAnchor="middle">0</text>
+              <text x="590" y="55" fontSize="12" fill="#64748b" textAnchor="middle">{capacity}</text>
+            </svg>
+          </div>
+
           <div className="knapsack-table-wrap">
             <table className="knapsack-table">
               <thead>
