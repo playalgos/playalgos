@@ -362,23 +362,50 @@ export function QuickSortPivotPage() {
       {gameState === "playing" && (
         <div className={`quicksort-board ${mode === "chaos" ? "chaos" : ""} chaos-${chaosTick % 4}`}>
           <h2>Array Board</h2>
-          <div className="array-row">
-            {engineState.array.map((value, index) => {
-              const inActive = activeRange ? index >= activeRange.low && index <= activeRange.high : false;
-              const isPivot = pivotIndex === index;
-              return (
-                <button
-                  type="button"
-                  key={`${index}-${value}`}
-                  className={`array-pill ${inActive ? "active" : ""} ${isPivot ? "pivot" : ""}`}
-                  onClick={() => inActive && selectPivot(index)}
-                  disabled={!inActive}
-                  title={`index ${index}`}
-                >
-                  {value}
-                </button>
-              );
-            })}
+          <div className="array-visualizer" style={{ margin: "20px 0", textAlign: "center", background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0", overflowX: "auto" }}>
+            <svg viewBox={`0 0 ${Math.max(600, engineState.array.length * 40 + 40)} 150`} style={{ maxWidth: "100%", height: "auto" }}>
+              {engineState.array.map((value, index) => {
+                const inActive = activeRange ? index >= activeRange.low && index <= activeRange.high : false;
+                const isPivot = pivotIndex === index;
+                // values typically 1-99
+                const maxVal = Math.max(...engineState.array, 100);
+                const barHeight = Math.max(10, (value / maxVal) * 100);
+                const xPos = index * 40 + 20;
+                
+                let fill = "#cbd5e1";
+                if (inActive) fill = "#bae6fd";
+                if (isPivot) fill = "#34d399";
+                if (assignments[index] === "left") fill = "#fbbf24";
+                if (assignments[index] === "right") fill = "#a78bfa";
+                
+                const isInteractive = inActive && pivotStrategy === "free";
+                
+                return (
+                  <g 
+                    key={`${index}-${value}`}
+                    transform={`translate(${xPos}, 0)`}
+                    onClick={() => { if (isInteractive) selectPivot(index); }}
+                    style={{ cursor: isInteractive ? "pointer" : "default", outline: "none" }}
+                    role={isInteractive ? "button" : "presentation"}
+                    aria-label={`Select pivot ${value} at index ${index}`}
+                    tabIndex={isInteractive ? 0 : -1}
+                    onKeyDown={(e) => { if (isInteractive && (e.key === "Enter" || e.key === " ")) selectPivot(index); }}
+                  >
+                    <rect x="0" y={120 - barHeight} width="30" height={barHeight} fill={fill} rx="4" stroke={inActive && !isPivot && !assignments[index] ? "#38bdf8" : "none"} strokeWidth="2" style={{ transition: "all 0.3s" }} className={isInteractive ? "hover-bar" : ""} />
+                    <text x="15" y="140" fontSize="12" fill="#0f172a" textAnchor="middle" fontWeight="bold">{value}</text>
+                  </g>
+                );
+              })}
+            </svg>
+            <style>{`.hover-bar:hover { filter: brightness(0.9); }`}</style>
+            
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "12px", fontSize: "12px", fontWeight: "bold", flexWrap: "wrap" }}>
+              <span style={{ color: "#cbd5e1" }}>■ Inactive</span>
+              <span style={{ color: "#38bdf8" }}>■ Active (Click to set Pivot)</span>
+              <span style={{ color: "#34d399" }}>■ Pivot</span>
+              <span style={{ color: "#fbbf24" }}>■ Left Subarray</span>
+              <span style={{ color: "#a78bfa" }}>■ Right Subarray</span>
+            </div>
           </div>
 
           {activeRange && (

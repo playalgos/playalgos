@@ -273,6 +273,74 @@ export function RangeNarrowingPage() {
       )}
 
       {gameState === "playing" && partition && (
+        <div className="range-board" style={{ margin: "20px 0", textAlign: "center", background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0", overflowX: "auto" }}>
+          <h2>Interval Map</h2>
+          <svg viewBox="0 0 600 120" style={{ maxWidth: "100%", height: "auto" }}>
+            {/* Background full range track */}
+            <rect x="20" y="55" width="560" height="10" rx="5" fill="#e2e8f0" />
+            <text x="20" y="45" fontSize="12" fill="#64748b" textAnchor="middle">{sessionRange.min}</text>
+            <text x="580" y="45" fontSize="12" fill="#64748b" textAnchor="middle">{sessionRange.max}</text>
+
+            {/* Active range highlight */}
+            {(() => {
+              const span = sessionRange.max - sessionRange.min;
+              if (span <= 0) return null;
+              
+              const activeRatioStart = (activeInterval.min - sessionRange.min) / span;
+              const activeRatioEnd = (activeInterval.max - sessionRange.min) / span;
+              
+              const xStart = 20 + activeRatioStart * 560;
+              const xEnd = 20 + activeRatioEnd * 560;
+              const activeWidth = Math.max(2, xEnd - xStart);
+              
+              const splitRatio = (partition.midpoint - sessionRange.min) / span;
+              const xSplit = 20 + splitRatio * 560;
+
+              return (
+                <g>
+                  {/* Left Partition Highlight (Hoverable/Clickable target) */}
+                  <g
+                    onClick={() => void handleSelection("left")}
+                    style={{ cursor: "pointer", outline: "none" }}
+                    role="button"
+                    aria-label={`Select Left Half: ${partition.left.min} to ${partition.left.max}`}
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") void handleSelection("left"); }}
+                  >
+                    <rect x={xStart} y="50" width={Math.max(0, xSplit - xStart)} height="20" rx="3" fill="#bae6fd" stroke="#0ea5e9" strokeWidth="2" style={{ transition: "all 0.2s", opacity: 0.8 }} className="svg-hover-fill" />
+                    <text x={xStart + (xSplit - xStart) / 2} y="85" fontSize="12" fill="#0284c7" textAnchor="middle" fontWeight="bold">L ({partition.left.min}-{partition.left.max})</text>
+                  </g>
+
+                  {/* Right Partition Highlight (Hoverable/Clickable target) */}
+                  <g
+                    onClick={() => void handleSelection("right")}
+                    style={{ cursor: "pointer", outline: "none" }}
+                    role="button"
+                    aria-label={`Select Right Half: ${partition.right.min} to ${partition.right.max}`}
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") void handleSelection("right"); }}
+                  >
+                    <rect x={xSplit} y="50" width={Math.max(0, xEnd - xSplit)} height="20" rx="3" fill="#fed7aa" stroke="#f97316" strokeWidth="2" style={{ transition: "all 0.2s", opacity: 0.8 }} className="svg-hover-fill-right" />
+                    <text x={xSplit + (xEnd - xSplit) / 2} y="35" fontSize="12" fill="#c2410c" textAnchor="middle" fontWeight="bold">R ({partition.right.min}-{partition.right.max})</text>
+                  </g>
+
+                  {/* Split Marker */}
+                  <line x1={xSplit} y1="30" x2={xSplit} y2="90" stroke="#0f172a" strokeWidth="2" strokeDasharray="4 2" />
+                  <circle cx={xSplit} cy="60" r="4" fill="#0f172a" />
+                  <text x={xSplit} y="105" fontSize="12" fill="#0f172a" textAnchor="middle" fontWeight="bold">Cut: {partition.midpoint}</text>
+                </g>
+              );
+            })()}
+          </svg>
+
+          <style>{`
+            .svg-hover-fill:hover { fill: #7dd3fc !important; opacity: 1 !important; stroke-width: 3px !important; }
+            .svg-hover-fill-right:hover { fill: #fdba74 !important; opacity: 1 !important; stroke-width: 3px !important; }
+          `}</style>
+        </div>
+      )}
+
+      {gameState === "playing" && partition && (
         <div className="range-options">
           {advancedMode && (
             <label className="split-input">

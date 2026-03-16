@@ -61,7 +61,20 @@ describe("DijkstraPathStrategyPage", () => {
     await waitFor(() => expect(dijkstraStoreMock.startDijkstraSession).toHaveBeenCalled());
 
     expect(screen.getByRole("button", { name: "Hint" })).toBeInTheDocument();
-    expect(screen.getByTitle("Lock A")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Show Distances/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lock A" })).toBeInTheDocument();
+    expect(screen.getAllByText("d=?").length).toBeGreaterThan(0);
+  });
+
+  it("reveals tentative distances only after assist is enabled", async () => {
+    render(<DijkstraPathStrategyPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Start Game" }));
+    await waitFor(() => expect(dijkstraStoreMock.startDijkstraSession).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: /Show Distances/i }));
+
+    expect(screen.getByText("d=0")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Distances Visible" })).toBeDisabled();
   });
 
   it("shows invalid lock feedback", async () => {
@@ -88,7 +101,7 @@ describe("DijkstraPathStrategyPage", () => {
     render(<DijkstraPathStrategyPage />);
     fireEvent.click(screen.getByRole("button", { name: "Start Game" }));
     await waitFor(() => expect(dijkstraStoreMock.startDijkstraSession).toHaveBeenCalled());
-    fireEvent.click(screen.getByTitle("Lock B"));
+    fireEvent.click(screen.getByRole("button", { name: "Lock B" }));
     await waitFor(() => expect(dijkstraStoreMock.submitDijkstraLock).toHaveBeenCalled());
 
     expect(screen.getByText(/Invalid lock for B/i)).toBeInTheDocument();
@@ -123,7 +136,7 @@ describe("DijkstraPathStrategyPage", () => {
     render(<DijkstraPathStrategyPage />);
     fireEvent.click(screen.getByRole("button", { name: "Start Game" }));
     await waitFor(() => expect(dijkstraStoreMock.startDijkstraSession).toHaveBeenCalled());
-    fireEvent.click(screen.getByTitle("Lock D"));
+    fireEvent.click(screen.getByRole("button", { name: "Lock D" }));
     await waitFor(() => expect(dijkstraStoreMock.submitDijkstraLock).toHaveBeenCalled());
 
     expect(screen.getByText(/Round Complete/i)).toBeInTheDocument();

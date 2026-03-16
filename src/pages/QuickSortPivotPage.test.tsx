@@ -81,7 +81,7 @@ describe("QuickSortPivotPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Start Game" }));
     await waitFor(() => expect(quickStoreMock.startQuickSortSession).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByTitle("index 0"));
+    fireEvent.click(screen.getByRole("button", { name: /Select pivot .* at index 0/i }));
     fireEvent.click(screen.getAllByRole("button", { name: "Left" })[0]);
     fireEvent.click(screen.getAllByRole("button", { name: "Right" })[1]);
     fireEvent.click(screen.getAllByRole("button", { name: "Left" })[2]);
@@ -115,7 +115,7 @@ describe("QuickSortPivotPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Start Game" }));
     await waitFor(() => expect(quickStoreMock.startQuickSortSession).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByTitle("index 0"));
+    fireEvent.click(screen.getByRole("button", { name: /Select pivot .* at index 0/i }));
     fireEvent.click(screen.getAllByRole("button", { name: "Left" })[0]);
     fireEvent.click(screen.getAllByRole("button", { name: "Right" })[1]);
     fireEvent.click(screen.getAllByRole("button", { name: "Left" })[2]);
